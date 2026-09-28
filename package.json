@@ -1,15 +1,17 @@
 {
-  "name": "electrostatics-tutorial",
+  "name": "taller666-notes",
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "node ./node_modules/@slidev/cli/bin/slidev.mjs",
-    "build": "node ./node_modules/@slidev/cli/bin/slidev.mjs build",
-    "build:pages": "node scripts/prepare-scroll.mjs sources/静电场-原稿.md && npm run build",
-    "build:workers": "npm run build:pages && node scripts/prepare-workers.mjs",
+    "dev": "node scripts/dev-library.mjs",
+    "build": "node scripts/build-site.mjs",
+    "build:pages": "npm run build",
+    "build:workers": "npm run build",
     "preview": "node scripts/serve.mjs",
-    "check": "node scripts/qa-scroll.mjs",
-    "prepare:notes": "node scripts/prepare-scroll.mjs",
+    "check": "node --test tests/*.test.mjs",
+    "prepare:notes": "node scripts/prepare-library.mjs",
+    "new:chapter": "node scripts/new-chapter.mjs",
+    "publish:site": "node scripts/publish-site.mjs",
     "start": "node scripts/launch.mjs"
   },
   "dependencies": {
@@ -17,7 +19,8 @@
     "@slidev/theme-default": "0.25.0",
     "katex": "0.18.9",
     "markdown-it": "14.3.2",
-    "vue": "3.5.43"
+    "vue": "3.5.43",
+    "yaml": "2.9.1"
   },
   "devDependencies": {
     "playwright-chromium": "1.63.0",
