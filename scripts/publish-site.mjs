@@ -4,12 +4,15 @@ import { fileURLToPath } from 'node:url'
 import { spawnSync } from 'node:child_process'
 import { createInterface } from 'node:readline/promises'
 import { stdin, stdout } from 'node:process'
+import { findGit } from './lib/git-command.mjs'
 
 const root = path.resolve(fileURLToPath(new URL('..', import.meta.url)))
 const args = process.argv.slice(2)
 const dryRun = args.includes('--dry-run')
+const checkOnly = args.includes('--check')
 const managedPaths = ['content', 'site.config.json']
 let input
+let gitRuntime
 
 function redact(value) {
   return String(value ?? '')
@@ -24,15 +27,16 @@ function run(command, commandArgs, options = {}) {
     stdio: options.inherit ? 'inherit' : 'pipe',
     ...options,
   })
-  if (result.error) throw new Error(`无法运行 ${path.basename(command)}，请检查是否已安装并加入 PATH。`)
+  if (result.error) throw new Error(`无法运行 ${path.basename(command)}（${result.error.code || '启动失败'}），请检查程序路径及执行权限。`)
   return result
 }
 
 function git(commandArgs, { allowFailure = false, network = false, proxy, identity } = {}) {
+  gitRuntime ??= findGit({ cwd: root })
   const settings = ['-c', `safe.directory=${root}`]
   if (network && proxy) settings.push('-c', `http.proxy=${proxy}`)
   if (identity) settings.push('-c', `user.name=${identity.name}`, '-c', `user.email=${identity.email}`)
-  const result = run('git', [...settings, ...commandArgs])
+  const result = run(gitRuntime.command, [...settings, ...commandArgs])
   if (result.status !== 0 && !allowFailure) {
     if (network) {
       throw new Error(`git ${commandArgs[0]} 未成功（退出码 ${result.status}）。请检查 GitHub 权限、网络及 origin 配置；工具不会强制推送。为避免输出凭据，未显示网络命令的原始日志。`)
@@ -103,9 +107,7 @@ function commitIdentity() {
 
 async function buildSite() {
   console.log('\n正在构建网站……')
-  const result = process.platform === 'win32'
-    ? run(process.env.ComSpec || 'cmd.exe', ['/d', '/c', 'npm.cmd run build:workers'], { inherit: true })
-    : run('npm', ['run', 'build:workers'], { inherit: true })
+  const result = run(process.execPath, [path.join(root, 'scripts', 'build-site.mjs')], { inherit: true })
   if (result.status !== 0) throw new Error('网站构建失败，未暂存、提交或推送。请先修复构建错误。')
 }
 
@@ -118,14 +120,18 @@ function safeStagedAdditions() {
 }
 
 async function publish() {
-  if (args.some(arg => arg !== '--dry-run')) throw new Error('仅支持可选参数 --dry-run。')
+  if (args.length > 1 || args.some(arg => !['--dry-run', '--check'].includes(arg))) throw new Error('可选参数为 --dry-run 或 --check。')
   if (dryRun) {
-    console.log(`发布计划（仅展示，不执行任何命令）\n项目：${root}\n1. 验证当前仓库根目录、main 分支和 origin。\n2. npm run build:workers；失败即停止。\n3. 读取已启用的 Windows 系统代理，仅用于本次网络 Git 命令。\n4. fetch origin 的 main；若本地落后或分叉则停止，不自动合并。\n5. 显示 git status 与 diff 摘要，等待本人输入 Y。\n6. 暂存 content/、site.config.json 及项目内已跟踪文件的改动；范围外的新增文件不加入。\n7. 使用本地 Git 身份或上次提交作者提交，再推送 main 到已有 origin。\n无新改动但本地领先时，仅推送已有提交。不会修改全局身份、代理或 safe.directory。`)
+    console.log(`发布计划（仅展示，不执行任何命令）\n项目：${root}\n1. 验证当前仓库根目录、main 分支和 origin。\n2. 使用当前 Node.js 构建网站（与 build:workers 相同流程）；失败即停止。\n3. 读取已启用的 Windows 系统代理，仅用于本次网络 Git 命令。\n4. fetch origin 的 main；若本地落后或分叉则停止，不自动合并。\n5. 显示 git status 与 diff 摘要，等待本人输入 Y。\n6. 暂存 content/、site.config.json 及项目内已跟踪文件的改动；范围外的新增文件不加入。\n7. 使用本地 Git 身份或上次提交作者提交，再推送 main 到已有 origin。\n无新改动但本地领先时，仅推送已有提交。不会修改全局身份、代理或 safe.directory。`)
     return
   }
-  if (!stdin.isTTY) throw new Error('请在交互终端运行发布工具；只查看计划可加 --dry-run。')
+  if (!checkOnly && !stdin.isTTY) throw new Error('请在交互终端运行发布工具；只检查环境可加 --check，只查看计划可加 --dry-run。')
   const repoRoot = output(['rev-parse', '--show-toplevel'])
   if (!samePath(await fs.realpath(repoRoot), await fs.realpath(root))) throw new Error('Git 仓库根目录与网站目录不同，已停止，避免纳入旁边的笔记。')
+  if (checkOnly) {
+    console.log(`Node：${process.version}\nGit：${gitRuntime.command}\n${gitRuntime.version}\n仓库：${root}\n分支：${output(['branch', '--show-current'])}\n环境检查通过；未构建、提交、联网或推送。`)
+    return
+  }
   if (output(['branch', '--show-current']) !== 'main') throw new Error('请先切换到 main 分支再发布；工具不会自动切换分支。')
   git(['remote', 'get-url', 'origin'])
   if (output(['diff', '--name-only', '--diff-filter=U'])) throw new Error('仓库存在未解决的冲突，请先处理。')
