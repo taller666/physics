@@ -11,6 +11,8 @@ qa/
 !.env.example
 *.log
 .wrangler/
+.dev.vars
+.dev.vars.*
 
 # Earlier decks and local reference material (not used by this course)
 chapters/

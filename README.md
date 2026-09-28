@@ -25,7 +25,25 @@ node scripts/launch.mjs
 
 构建后也可在 Windows 双击 **启动课件.cmd**，启动本机服务并打开浏览器。保留命令窗口，关闭窗口即可停止服务。`dist/` 是生成产物，不提交到 Git；新克隆的仓库需要先构建。不要直接双击 `dist/index.html`。
 
-## Cloudflare Pages · GitHub 集成
+## Cloudflare Workers · GitHub 集成
+
+如果控制台中有 **Deploy command**、**Build token** 等字段，使用下面的 Workers 配置：
+
+| 配置项 | 值 |
+|---|---|
+| Worker 名称 | `physics`（与 `wrangler.jsonc` 一致） |
+| 生产分支 | `main` |
+| Build command | `npm run build:workers` |
+| Deploy command | `npx wrangler deploy` |
+| Root directory | `/`（仓库根目录） |
+| Build variable `NODE_VERSION` | `22.16.0` |
+| Build variable `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD` | `1` |
+
+命令中的 `build:workers` 必须连在一起，冒号后没有空格。`wrangler preview` 用于预览；正式发布使用 `wrangler deploy`。Build variables 是构建环境变量，请在构建设置中添加。
+
+`build:workers` 先生成原稿展示数据并编译课件，再移除仅用于 Pages 的重写文件。`wrangler.jsonc` 配置静态资源与单页应用回退，支持直接访问或刷新 `/1`、`/2`、`/presenter/1` 等地址。
+
+## Cloudflare Pages · GitHub 集成（另一种部署方式）
 
 连接仓库 [taller666/physics](https://github.com/taller666/physics)，按以下配置部署：
 
