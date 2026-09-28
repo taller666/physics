@@ -19,3 +19,10 @@ htmlAttrs:
 <!-- 自动生成；请编辑 content/ 中的 Markdown。 -->
 
 <LibraryChapter chapter-id="电磁学/01-静电场" />
+
+---
+layout: library
+title: "path-integral"
+---
+
+<LibraryChapter chapter-id="量子场论/09-path-integral" />
