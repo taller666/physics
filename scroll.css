@@ -1,0 +1,43 @@
+.slidev-layout.scroll-lecture {padding:24px 28px 15px;background:#f6f8fa;color:#142d43;display:flex;flex-direction:column;height:100%;font-family:'Microsoft YaHei','Noto Sans CJK SC',sans-serif;}
+.scroll-header {height:69px;flex-shrink:0;display:flex;align-items:flex-start;justify-content:space-between;border-bottom:1px solid #d3dee7;margin-bottom:16px;}
+.scroll-header>div{display:flex;gap:20px;align-items:baseline;}
+.scroll-header h1{font-size:31px;line-height:42px;font-weight:700;margin:0;color:#15374d;}
+.lecture-subtitle{font-size:15px;color:#668194;}
+.scroll-header nav{display:flex;gap:5px;margin-top:4px;}
+.scroll-header nav button{font-size:16px;padding:7px 12px;border-radius:5px;color:#597184;transition:background .15s;}
+.scroll-header nav button:hover{background:#e8eef2;}
+.scroll-header nav button.active{background:#167d8d;color:white;}
+.scroll-grid{display:grid;grid-template-columns:42% minmax(0,1fr);gap:20px;flex:1;min-height:0;}
+.scroll-column{min-width:0;min-height:0;display:flex;flex-direction:column;background:#fff;border:1px solid #d4e0e7;border-radius:8px;overflow:hidden;}
+.pane-heading{height:46px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 17px;background:#edf4f6;border-bottom:1px solid #d9e6eb;}
+.pane-heading h2{margin:0;font-size:19px;font-weight:700;color:#174c5a;}
+.pane-heading h2 small{font-size:12px;font-weight:400;color:#6b8493;margin-left:8px;}
+.pane-heading button{font-size:13px;color:#637e90;padding:5px;}
+.pane-heading button:hover{color:#0d7484;}
+.independent-pane{flex:1;min-height:0;overflow:auto;overscroll-behavior:contain;scrollbar-gutter:stable;scrollbar-width:thin;scrollbar-color:#9eafbc #eff3f6;touch-action:pan-x pan-y;}
+.independent-pane:focus-visible{outline:2px solid #167d8d;outline-offset:-2px;}
+.notes-scroll{padding:8px 20px 24px;}
+.screenshots-scroll{padding:12px 11px 24px;}
+.scroll-footer{height:26px;flex-shrink:0;padding-top:10px;display:flex;justify-content:space-between;color:#668194;font-size:12px;}
+.original-notes{font-size:21px;line-height:1.7;color:#152d43;}
+.notes-outline{position:sticky;top:-8px;z-index:2;margin:0 -20px 9px;padding:9px 18px;background:#fff;border-bottom:1px solid #e5edf0;}
+.notes-outline select{width:100%;font-size:15px;background:#f5f8fa;color:#536f82;border:1px solid #d9e3e9;border-radius:4px;padding:6px 8px;}
+.original-notes h2{font-size:26px;font-weight:700;padding-bottom:8px;margin:16px 0 18px;border-bottom:2px solid #deebed;color:#0c6b7c;}
+.original-notes h3{font-size:22px;font-weight:700;margin:25px 0 12px;color:#24465f;}
+.original-notes p{margin:12px 0;line-height:1.7;}
+.original-notes ul{padding-left:23px;margin:14px 0;}
+.original-notes li{margin:13px 0;line-height:1.65;}
+.original-notes blockquote{margin:18px 0;padding:10px 14px;border-left:3px solid #75a9b2;background:#f0f6f7;font-size:19px;}
+.original-notes blockquote p{margin:0;}
+.original-notes .note-formula{max-width:100%;overflow-x:auto;overflow-y:hidden;padding:8px 0;scrollbar-width:thin;}
+.original-notes .katex{font-size:1.07em;}
+.original-notes .katex-display{margin:7px 0;text-align:left;}
+.original-notes .katex-display>.katex{text-align:left;}
+.original-screenshots{display:flex;flex-direction:column;gap:24px;}
+.screenshot-button{display:block;width:100%;padding:0;background:#fff;cursor:zoom-in;}
+.screenshot-button img{display:block;width:100%;height:auto;max-width:none;border:1px solid #e2e6e8;}
+.screenshot-button:focus-visible{outline:3px solid #167d8d;}
+.image-dialog{position:fixed;inset:20px;width:calc(100vw - 40px);height:calc(100vh - 40px);max-width:none;max-height:none;margin:auto;padding:42px 18px 18px;background:#eaf0f3;border:0;border-radius:8px;overflow:auto;overscroll-behavior:contain;}
+.image-dialog::backdrop{background:rgba(13,33,49,.8);}
+.image-dialog img{display:block;width:100%;height:auto;max-width:1500px;max-height:none;margin:0 auto;}
+.close-image{position:fixed;top:25px;right:35px;z-index:10;border-radius:4px;background:#16384e;color:white;padding:5px 13px;font-size:16px;}

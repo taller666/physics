@@ -1,0 +1,45 @@
+:root { --ink:#152c46; --muted:#557085; --teal:#167d8d; --paper:#fcfcfa; --line:#dce5eb; }
+.slidev-layout { font-family:'Microsoft YaHei','Noto Sans CJK SC','PingFang SC',sans-serif; color:var(--ink); background:var(--paper); }
+.slidev-layout.lecture-board { padding:30px 42px 22px; display:flex; flex-direction:column; height:100%; }
+.lecture-header { position:relative; height:91px; flex-shrink:0; border-bottom:2px solid var(--ink); }
+.section-name { color:var(--teal); font-size:14px; font-weight:700; letter-spacing:2px; line-height:20px; }
+.lecture-header h1 { font-size:33px; font-weight:700; line-height:1.35; margin:9px 80px 0 0; color:var(--ink); }
+.level-mark { position:absolute; right:0; bottom:20px; font-size:14px; color:var(--teal); border:1px solid #b8d5d8; padding:3px 10px; border-radius:3px; }
+.board-columns { flex:1; min-height:0; display:grid; grid-template-columns:36% 64%; padding-top:18px; }
+.theory-column { border-right:1px solid var(--line); padding:0 26px 0 0; min-width:0; }
+.proof-column { padding:0 0 0 32px; min-width:0; }
+.column-label { font-size:13px; font-weight:700; color:var(--muted); letter-spacing:1px; margin-bottom:12px; }
+.column-body { font-size:21px; line-height:1.55; }
+.proof-column .column-body { font-size:22px; }
+.column-body h2,.column-body h3 { color:var(--ink); margin:0 0 11px; font-size:23px; line-height:1.45; font-weight:700; }
+.column-body h3:not(:first-child) { margin-top:13px; }
+.column-body p { margin:9px 0; line-height:1.5; }
+.column-body ul,.column-body ol { padding-left:1.12em; margin:9px 0; }
+.column-body li { margin:7px 0; padding-left:2px; line-height:1.48; }
+.column-body li p { margin:4px 0; }
+.column-body strong { color:var(--teal); font-weight:700; }
+.column-body .katex-display { margin:0.62em 0; overflow:visible; font-size:1.02em; }
+.column-body .katex { font-size:1.09em; }
+.column-body blockquote { border-left:3px solid var(--teal); background:#edf5f5; padding:8px 12px; margin:12px 0; font-size:19px; line-height:1.5; color:#214957; }
+.column-body blockquote p { margin:0; }
+.column-body table { width:100%; font-size:18px; border-collapse:collapse; margin-top:9px; }
+.column-body th,.column-body td { border-bottom:1px solid var(--line); padding:7px 5px; text-align:left; }
+.column-body th { color:var(--teal); }
+.column-body code { font-size:.86em; background:#edf1f3; }
+.lecture-footer { display:flex; justify-content:space-between; align-items:center; border-top:1px solid var(--line); margin-top:12px; padding-top:9px; height:30px; flex-shrink:0; font-size:12px; color:var(--muted); }
+.lecture-footer > span:first-child { max-width:92%; white-space:nowrap; text-overflow:ellipsis; overflow:hidden; }
+.lecture-footer > span:last-child { display:flex; gap:4px; }
+.slidev-layout.cover { background:linear-gradient(115deg,#102a43 0%,#183e58 65%,#1b5261 100%); color:#f7fafc; padding:70px 72px; }
+.slidev-layout.cover h1 { color:#fff; font-size:64px; line-height:1.25; letter-spacing:3px; }
+.slidev-layout.cover h2 { color:#b5dadd; font-size:27px; font-weight:400; margin-top:26px; }
+.slidev-layout.cover p { font-size:23px; color:#dce9f0; line-height:1.8; }
+.cover-tag { color:#94d6d1; letter-spacing:4px; font-size:17px; margin-bottom:34px; }
+.cover-rule { width:88px; height:4px; background:#68c6c4; margin:34px 0; }
+.cover-equation { margin-top:36px; color:#e6f3f5; font-size:30px; }
+.compact .column-body { font-size:20px; }
+.compact .proof-column .column-body { font-size:21px; }
+.compact .column-body .katex-display { margin:.5em 0; }
+.small-note { font-size:18px; color:var(--muted); }
+.source-note { font-size:15px; color:var(--muted); }
+.physics-diagram { display:block; width:100%; height:auto; max-height:205px; margin:9px auto 12px; }
+@media print { .slidev-layout { print-color-adjust:exact; -webkit-print-color-adjust:exact; } }

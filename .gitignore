@@ -1,0 +1,32 @@
+node_modules/
+.npm-cache/
+.slidev/
+dist/
+research/
+qa/
+
+# Local settings and generated logs
+.env
+.env.*
+!.env.example
+*.log
+.wrangler/
+
+# Earlier decks and local reference material (not used by this course)
+chapters/
+detailed-slides.md
+course-index.json
+components/PhysicsDiagram.vue
+layouts/board.vue
+data/exercises.json
+public/figures/
+public/lecture/
+public/textbook/
+sources/*-old.md
+sources/补全说明.md
+scripts/assemble.mjs
+scripts/check-math.mjs
+scripts/create-scroll-entry.mjs
+scripts/package.py
+scripts/qa.mjs
+scripts/qa-details.mjs

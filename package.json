@@ -1,0 +1,24 @@
+{
+  "name": "electrostatics-tutorial",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "node ./node_modules/@slidev/cli/bin/slidev.mjs",
+    "build": "node ./node_modules/@slidev/cli/bin/slidev.mjs build",
+    "build:pages": "node scripts/prepare-scroll.mjs sources/静电场-原稿.md && npm run build",
+    "preview": "node scripts/serve.mjs",
+    "check": "node scripts/qa-scroll.mjs",
+    "prepare:notes": "node scripts/prepare-scroll.mjs",
+    "start": "node scripts/launch.mjs"
+  },
+  "dependencies": {
+    "@slidev/cli": "53.0.0",
+    "@slidev/theme-default": "0.25.0",
+    "vue": "3.5.43",
+    "markdown-it": "14.3.2",
+    "katex": "0.18.9"
+  },
+  "devDependencies": {
+    "playwright-chromium": "1.63.0"
+  }
+}
