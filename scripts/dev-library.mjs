@@ -2,9 +2,11 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { spawn } from 'node:child_process'
 import { createSiteServer } from './site-server.mjs'
+import { createLocalSpace } from '../server/local-space.mjs'
 
 const root = path.resolve(import.meta.dirname, '..')
-const { server, refresh, setDirectory } = createSiteServer(path.join(root, '.preview/a'), { live: true })
+const api = await createLocalSpace(root)
+const { server, refresh, setDirectory } = createSiteServer(path.join(root, '.preview/a'), { live: true, api })
 let currentOutput = ''
 let running = false
 let queued = false

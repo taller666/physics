@@ -22,7 +22,7 @@ htmlAttrs:
 
 ---
 layout: library
-title: "path-integral"
+title: "静电场中的导体与电介质"
 ---
 
-<LibraryChapter chapter-id="量子场论/09-path-integral" />
+<LibraryChapter chapter-id="电磁学/02-静电场中的导体与电介质" />

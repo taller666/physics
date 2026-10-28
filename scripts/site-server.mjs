@@ -4,7 +4,7 @@ import path from 'node:path'
 
 const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json', '.svg': 'image/svg+xml', '.png': 'image/png', '.jpg': 'image/jpeg', '.jpeg': 'image/jpeg', '.gif': 'image/gif', '.webp': 'image/webp', '.pdf': 'application/pdf', '.woff': 'font/woff', '.woff2': 'font/woff2', '.ttf': 'font/ttf', '.txt': 'text/plain; charset=utf-8', '.mp3': 'audio/mpeg', '.mp4': 'video/mp4' }
 const reload = `<script>let revision;const events=new EventSource('/__events');events.onmessage=e=>{if(revision!==undefined&&revision!==e.data)location.reload();revision=e.data}</script>`
-export function createSiteServer(directory, { live = false } = {}) {
+export function createSiteServer(directory, { live = false, api } = {}) {
   let root = path.resolve(directory)
   const clients = new Set()
   let revision = 0
@@ -12,6 +12,35 @@ export function createSiteServer(directory, { live = false } = {}) {
   const server = http.createServer(async (req, res) => {
     let name
     try { name = decodeURIComponent(new URL(req.url, 'http://localhost').pathname) } catch { res.writeHead(400).end(); return }
+    if (name.startsWith('/api/space/')) {
+      if (!api) { res.writeHead(503, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'private, no-store' }).end(JSON.stringify({ error: '个人空间服务尚未接通' })); return }
+      try {
+        const headers = new Headers()
+        for (const [key, value] of Object.entries(req.headers)) if (value !== undefined) headers.set(key, Array.isArray(value) ? value.join(', ') : value)
+        const address = server.address()
+        const origin = `http://127.0.0.1:${address.port}`
+        const options = { method: req.method, headers }
+        if (!['GET', 'HEAD'].includes(req.method)) {
+          options.body = req
+          options.duplex = 'half'
+        }
+        const request = new Request(new URL(req.url, origin), options)
+        const response = await api(request, { clientIp: req.socket.remoteAddress })
+        res.writeHead(response.status, Object.fromEntries(response.headers))
+        if (req.method === 'HEAD' || !response.body) { res.end(); return }
+        const reader = response.body.getReader()
+        while (true) {
+          const { done, value } = await reader.read()
+          if (done) break
+          if (!res.write(value)) await new Promise(resolve => res.once('drain', resolve))
+        }
+        res.end()
+      } catch {
+        if (res.headersSent) { res.destroy(); return }
+        res.writeHead(500, { 'Content-Type': 'application/json; charset=utf-8', 'Cache-Control': 'private, no-store' }).end(JSON.stringify({ error: '个人空间暂时不可用' }))
+      }
+      return
+    }
     if (live && name === '/__events') {
       res.writeHead(200, { 'Content-Type': 'text/event-stream', 'Cache-Control': 'no-cache', Connection: 'keep-alive' })
       clients.add(res)

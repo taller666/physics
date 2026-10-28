@@ -3,7 +3,7 @@ import path from 'node:path'
 import MarkdownIt from 'markdown-it'
 import katex from 'katex'
 const root=path.resolve(import.meta.dirname,'..')
-const original='C:/Users/86159/Desktop/AFB/静电场.md'
+const original='D:/TallerStudy/个人的研究/AFB/静电场.md'
 const source=process.argv[2] || (await fs.stat(original).catch(()=>false)?original:path.join(root,'sources/静电场-原稿.md'))
 const raw=await fs.readFile(source,'utf8')
 await fs.mkdir(path.join(root,'data'),{recursive:true})

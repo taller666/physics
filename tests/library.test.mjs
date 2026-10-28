@@ -81,6 +81,75 @@ test('right.md takes priority, supports formulas, links and both image syntaxes'
   assert.deepEqual(current.assets, library.assets)
 })
 
+test('PDF embeds work in either column, preserve page fragments and remain separate from image zoom', async t => {
+  const root = await fixture(t)
+  const dir = 'content/分类/章'
+  await chapter(root, '分类', '章', '# 左栏\n\n![[files/手写 笔记.PDF#page=3|我的笔记]]\n\n[附件](files/手写%20笔记.PDF)')
+  await put(root, dir + '/right.md', '# 右栏\n\n![例题 PDF](files/手写%20笔记.PDF?version=1&mode=read#page=2)\n\n![图](right/01.png)')
+  await put(root, dir + '/files/手写 笔记.PDF', '%PDF-test')
+  await put(root, dir + '/right/01.png', png)
+  const { chapters: [current], assets } = await compileLibrary(root)
+  assert.equal(current.hasRight, true)
+  for (const html of [current.leftHtml, current.rightHtml]) {
+    assert.equal((html.match(/<iframe /g) || []).length, 1)
+    assert.match(html, /class="note-pdf-frame" src="\/media\//)
+    assert.match(html, /loading="lazy"/)
+    assert.match(html, /target="_blank" rel="noopener noreferrer">新窗口打开/)
+    assert.match(html, /若未显示预览/)
+    assert.doesNotMatch(html, /<img[^>]*\.PDF/)
+  }
+  assert.match(current.leftHtml, /\.PDF#page=3" title="PDF：我的笔记"/)
+  assert.match(current.rightHtml, /\.PDF\?version=1&amp;mode=read#page=2" title="PDF：例题 PDF"/)
+  assert.match(current.leftHtml, /<a href="[^"]+\.PDF">附件<\/a>/)
+  assert.deepEqual(current.images.map(image => image.alt), ['图'])
+  assert.equal(assets.length, 2, 'repeated PDF references copy a single asset')
+  assert.doesNotMatch(current.leftHtml, /data-zoom/)
+})
+
+test('PDF titles are escaped and code, comments and raw HTML cannot introduce embeds', async t => {
+  const root = await fixture(t)
+  const dir = 'content/分类/章'
+  await chapter(root, '分类', '章', [
+    '![[files/a.pdf|<script>alert("x")</script>]]', '',
+    '`![[files/missing.pdf]]`', '',
+    '```markdown', '![PDF](files/missing.pdf)', '```', '',
+    '<!-- ![[files/missing.pdf]] -->', '',
+    '<iframe src="files/missing.pdf"></iframe>'
+  ].join('\n'))
+  await put(root, dir + '/files/a.pdf', '%PDF-test')
+  const { chapters: [current], assets } = await compileLibrary(root)
+  assert.equal((current.leftHtml.match(/<iframe /g) || []).length, 1)
+  assert.match(current.leftHtml, /title="PDF：&lt;script&gt;alert\(&quot;x&quot;\)&lt;\/script&gt;"/)
+  assert.match(current.leftHtml, /&lt;iframe src=/)
+  assert.match(current.leftHtml, /<code>!\[\[files\/missing\.pdf\]\]<\/code>/)
+  assert.doesNotMatch(current.leftHtml, /<script>/)
+  assert.equal(assets.length, 1)
+})
+
+test('only chapter PDF assets embed; external paths and schemes remain escaped links', async t => {
+  const root = await fixture(t)
+  const urls = ['https://example.com/a.pdf?x=1&y=2', '//example.com/a.pdf', '/media/a.pdf', 'mailto:a.pdf', 'tel:a.pdf']
+  await chapter(root, '分类', '章', urls.map(url => '![[ ' + url + '|外部资料 ]]').join('\n\n'))
+  const { chapters: [current], assets } = await compileLibrary(root)
+  assert.doesNotMatch(current.leftHtml, /<iframe|<img/)
+  assert.equal((current.leftHtml.match(/target="_blank" rel="noopener noreferrer"/g) || []).length, urls.length)
+  assert.match(current.leftHtml, /a\.pdf\?x=1&amp;y=2/)
+  assert.deepEqual(assets, [])
+})
+
+test('PDF embeds enforce the same missing-file and chapter-boundary checks as attachments', async t => {
+  const root = await fixture(t)
+  await chapter(root, '分类', '章')
+  for (const reference of ['files/missing.pdf', '../private.pdf', '%2e%2e/private.pdf', '_secret/a.pdf', 'file:///C:/a.pdf']) {
+    await put(root, 'content/分类/章/right.md', '![[ ' + reference + ' ]]')
+    await assert.rejects(() => compileLibrary(root), error => {
+      assert.match(error.message, /right\.md/)
+      assert.ok(error.message.includes(reference), error.message)
+      return true
+    })
+  }
+})
+
 test('gallery supports required formats and natural numeric order', async t => {
   const root = await fixture(t)
   const dir = 'content/分类/章'

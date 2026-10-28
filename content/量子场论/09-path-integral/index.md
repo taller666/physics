@@ -1,12 +1,13 @@
 ---
 title: "path-integral"
 description: ""
-draft: false
+draft: true
 rightTitle: "例题与补充"
 ---
 
 # path-integral
 
+![My draft](files/notePad1790865292953.pdf)
 <!-- 在这里写正文。完成后把上面的 draft: true 改为 draft: false。 -->
 
 <!--

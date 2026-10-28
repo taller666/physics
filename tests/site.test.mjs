@@ -43,6 +43,8 @@ test('local preview serves chapter routes, Slidev HTML aliases and actual 404 re
     await fs.writeFile(path.join(temporary, 'notes/example/index.html'), '<body>chapter</body>')
     await fs.writeFile(path.join(temporary, 'slides/1.html'), '<body>slide</body>')
     await fs.writeFile(path.join(temporary, '404.html'), '<body>not found</body>')
+    const pdf = Buffer.from('%PDF-1.7\nPDF fixture bytes\n%%EOF')
+    await fs.writeFile(path.join(temporary, '讲义.pdf'), pdf)
     server.listen(0, '127.0.0.1')
     await once(server, 'listening')
     const base = `http://127.0.0.1:${server.address().port}`
@@ -53,6 +55,10 @@ test('local preview serves chapter routes, Slidev HTML aliases and actual 404 re
       assert(content.includes(body))
       assert(content.includes('EventSource'))
     }
+    const document = await fetch(base + '/' + encodeURIComponent('讲义.pdf') + '#page=2')
+    assert.equal(document.status, 200)
+    assert.equal(document.headers.get('content-type'), 'application/pdf')
+    assert.deepEqual(Buffer.from(await document.arrayBuffer()), pdf, 'live reload must not alter PDF bytes')
     const events = await fetch(base + '/__events')
     const reader = events.body.getReader()
     assert.equal(new TextDecoder().decode((await reader.read()).value), 'data: 0\n\n')

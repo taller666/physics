@@ -58,6 +58,50 @@ function isManaged(name) {
   return name === 'site.config.json' || name === 'content' || name.startsWith('content/')
 }
 
+// Use the files actually staged for this commit, including images and deleted paths.
+export function createCommitMessage(changedFiles, library = {}, detail = '') {
+  const clean = value => typeof value === 'string' ? value.replace(/\s+/gu, ' ').trim() : ''
+  const directoryTitle = value => clean(value.replace(/^\d+[-_.\s]+/u, '').replace(/[-_]+/gu, ' ')) || clean(value)
+  const chapterMeta = new Map((library.chapters || []).map(chapter => [chapter.id, chapter]))
+  const categoryMeta = new Map((library.categories || []).map(category => [category.id, category]))
+  const chapters = new Map()
+  const categories = new Map()
+  const other = new Set()
+  let slidesChanged = false
+  for (const filename of [...new Set(changedFiles)].sort()) {
+    const parts = filename.split('/')
+    if (parts[0] === 'content' && parts.length >= 4) {
+      const id = parts.slice(1, 3).join('/')
+      const chapter = chapterMeta.get(id)
+      const category = clean(chapter?.categoryTitle) || clean(categoryMeta.get(parts[1])?.title) || directoryTitle(parts[1])
+      chapters.set(id, `${category}/${clean(chapter?.title) || directoryTitle(parts[2])}`)
+    } else if (parts[0] === 'content' && parts.length === 3) {
+      categories.set(parts[1], clean(categoryMeta.get(parts[1])?.title) || directoryTitle(parts[1]))
+    } else if (filename === 'slides.md') {
+      // The generated deck is not evidence that every chapter changed.
+      slidesChanged = true
+    } else if (parts[0] === 'content') {
+      other.add('笔记目录')
+    } else if (parts[0] === 'templates') {
+      other.add('章节模板')
+    } else if (filename.endsWith('.md')) {
+      other.add('网站文档')
+    } else if (parts[0] === 'scripts' || parts[0] === 'tests') {
+      other.add('网站工具')
+    } else if (['web', 'components', 'layouts'].includes(parts[0])) {
+      other.add('网站页面')
+    } else {
+      other.add('网站配置与资源')
+    }
+  }
+  const summaries = []
+  if (chapters.size) summaries.push(`更新笔记：${[...chapters.values()].join('、')}`)
+  if (categories.size) summaries.push(`更新分类：${[...categories.values()].join('、')}`)
+  if (other.size) summaries.push(`更新${[...other].join('、')}`)
+  const summary = summaries.join('；') || (slidesChanged ? '更新讲课模式' : '更新网站文件')
+  return clean(detail) ? `${summary}；${clean(detail)}` : summary
+}
+
 function samePath(a, b) {
   const left = path.resolve(a)
   const right = path.resolve(b)
@@ -68,6 +112,19 @@ async function ask(question) {
   if (!stdin.isTTY) throw new Error('发布需要本人在终端确认；非交互检查请使用 --dry-run。')
   input ??= createInterface({ input: stdin, output: stdout })
   return input.question(question)
+}
+
+export async function confirmPublish(question = ask, write = console.log) {
+  while (true) {
+    const answer = (await question('\n确认提交上述改动并发布到 origin/main？输入 Y 后按回车确认，或输入 N 后按回车取消：'))
+      .normalize('NFKC').trim().toLowerCase()
+    // Chinese input methods may produce full-width Latin letters.
+    if (answer === 'y' || answer === 'yes') return true
+    if (answer === 'n' || answer === 'no') return false
+    write(answer
+      ? '未识别这个选项。请输入 Y 确认或 N 取消，然后按回车；支持大小写及全角字母。'
+      : '未收到选择。请输入 Y 确认或 N 取消，然后按回车。')
+  }
 }
 
 function systemProxy() {
@@ -159,7 +216,7 @@ async function publish() {
     console.log('没有可发布的改动或待推送提交。')
     return
   }
-  if (!/^y$/iu.test((await ask('\n确认提交上述改动并发布到 origin/main？输入 Y 确认，其他输入取消：')).trim())) {
+  if (!await confirmPublish()) {
     console.log('已取消；未暂存、提交或推送。')
     return
   }
@@ -167,10 +224,6 @@ async function publish() {
   if (trackedChanges || newFiles.length) {
     safeStagedAdditions()
     const identity = commitIdentity()
-    const now = new Date()
-    const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
-    const defaultMessage = `更新笔记 ${date}`
-    const message = (await ask(`提交说明（回车使用“${defaultMessage}”）：`)).trim() || defaultMessage
     const knownPaths = []
     for (const name of managedPaths) {
       if (await fs.stat(path.join(root, name)).catch(() => false) || output(['ls-files', '--', name])) knownPaths.push(name)
@@ -181,6 +234,13 @@ async function publish() {
     const staged = git(['diff', '--cached', '--quiet'], { allowFailure: true })
     if (staged.status !== 0 && staged.status !== 1) throw new Error('无法检查暂存区，未继续提交。')
     if (staged.status === 1) {
+      const changedFiles = nulList(git(['diff', '--cached', '--name-only', '--no-renames', '-z']).stdout)
+      const library = await fs.readFile(path.join(root, 'data/library.json'), 'utf8')
+        .then(source => JSON.parse(source)).catch(() => ({}))
+      const defaultMessage = createCommitMessage(changedFiles, library)
+      console.log(`\n自动生成的提交说明：${defaultMessage}`)
+      const detail = await ask('补充具体改动（可选；回车直接使用上述说明，填写后会追加在章节名后）：')
+      const message = createCommitMessage(changedFiles, library, detail)
       git(['commit', '-m', message], { identity })
       console.log('本地提交完成。')
     }
@@ -190,11 +250,13 @@ async function publish() {
   console.log('推送完成。Cloudflare 将按仓库配置启动构建；推送成功不代表云端部署已经完成，请到控制台查看结果。')
 }
 
-try {
-  await publish()
-} catch (error) {
-  console.error(`\n发布未完成：${redact(error.message)}`)
-  process.exitCode = 1
-} finally {
-  input?.close()
+if (process.argv[1] && samePath(process.argv[1], fileURLToPath(import.meta.url))) {
+  try {
+    await publish()
+  } catch (error) {
+    console.error(`\n发布未完成：${redact(error.message)}`)
+    process.exitCode = 1
+  } finally {
+    input?.close()
+  }
 }

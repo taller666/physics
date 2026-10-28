@@ -11,6 +11,7 @@
     "check": "node --test tests/*.test.mjs",
     "prepare:notes": "node scripts/prepare-library.mjs",
     "new:chapter": "node scripts/new-chapter.mjs",
+    "space:setup": "node scripts/setup-space.mjs",
     "publish:site": "node scripts/publish-site.mjs",
     "start": "node scripts/launch.mjs"
   },

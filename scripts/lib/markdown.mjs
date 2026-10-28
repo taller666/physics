@@ -205,10 +205,31 @@ const stripHeading = token => (token.children || []).filter(child => !['html_inl
   .map(child => child.type.endsWith('_open') || child.type.endsWith('_close') ? '' : child.content).join('').trim()
 const headingSlug = value => value.normalize('NFKC').toLowerCase().replace(/[^\p{L}\p{N}_-]+/gu, '-').replace(/^-+|-+$/g, '') || 'section'
 
+function isPdf(reference) {
+  try { return /\.pdf$/i.test(decodeURIComponent(String(reference).split(/[?#]/)[0])) }
+  catch { return false }
+}
+
 export async function renderMarkdown(body, { sourceFile, resolver, tocPrefix = 'left', legacyObsidian = false }) {
   const md = new MarkdownIt({ html: false, breaks: true, linkify: false, typographer: false })
   mathPlugin(md)
   wikiImages(md)
+  // Only our generated PDF markup is enabled; author-supplied HTML stays escaped.
+  // Spans keep this valid inside Markdown paragraphs, lists and blockquotes.
+  md.renderer.rules.library_pdf = (tokens, index) => {
+    const { url, title, local } = tokens[index].meta
+    const href = md.utils.escapeHtml(url)
+    const label = md.utils.escapeHtml(title)
+    // A remote URL with a .pdf suffix can return an active HTML document.
+    // Embed only chapter assets that went through filesystem validation.
+    if (!local) return '<a href="' + href + '" target="_blank" rel="noopener noreferrer">' + label + '（新窗口打开）</a>'
+    return '<span class="note-pdf"><span class="note-pdf-toolbar">'
+      + '<span class="note-pdf-title">' + label + '</span>'
+      + '<a href="' + href + '" target="_blank" rel="noopener noreferrer">新窗口打开 ↗</a></span>'
+      + '<iframe class="note-pdf-frame" src="' + href + '" title="PDF：' + label
+      + '" loading="lazy" referrerpolicy="no-referrer"></iframe>'
+      + '<span class="note-pdf-hint">若未显示预览，请使用“新窗口打开”。</span></span>'
+  }
   const extracted = extractDisplayMath(stripHtmlComments(body), { sourceFile, legacyObsidian })
   const env = { sourceFile, legacyObsidian, displayFormulas: extracted.formulas }
   const tokens = md.parse(extracted.body, env)
@@ -243,14 +264,22 @@ export async function renderMarkdown(body, { sourceFile, resolver, tocPrefix = '
   async function visit(items) {
     for (const token of items) {
       if (token.type === 'image') {
-        const asset = await resolver.resolve(token.attrGet('src'), sourceFile, { image: true })
+        const reference = token.attrGet('src')
+        const pdf = isPdf(reference)
+        const asset = await resolver.resolve(reference, sourceFile, { image: !pdf })
+        const alt = (token.children || []).map(child => child.content || '').join('') || token.content || ''
+        if (pdf) {
+          token.type = 'library_pdf'
+          token.meta = { url: asset.url, title: alt || 'PDF 文档', local: Boolean(asset.source) }
+          token.children = null
+          continue
+        }
         token.attrSet('src', asset.url)
         token.attrSet('loading', 'lazy')
         token.attrSet('decoding', 'async')
         token.attrSet('data-zoom', '')
         if (asset.width && !token.attrGet('width')) token.attrSet('width', String(asset.width))
         if (asset.height && !token.attrGet('height')) token.attrSet('height', String(asset.height))
-        const alt = (token.children || []).map(child => child.content || '').join('') || token.content || ''
         if (!imageUrls.has(asset.url)) {
           imageUrls.add(asset.url)
           images.push({ src: asset.url, alt, ...(asset.width ? { width: asset.width, height: asset.height } : {}) })
