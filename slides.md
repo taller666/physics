@@ -26,3 +26,10 @@ title: "静电场中的导体与电介质"
 ---
 
 <LibraryChapter chapter-id="电磁学/02-静电场中的导体与电介质" />
+
+---
+layout: library
+title: "静电能"
+---
+
+<LibraryChapter chapter-id="电磁学/03-静电能" />
