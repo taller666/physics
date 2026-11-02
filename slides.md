@@ -33,3 +33,10 @@ title: "静电能"
 ---
 
 <LibraryChapter chapter-id="电磁学/03-静电能" />
+
+---
+layout: library
+title: "电流场"
+---
+
+<LibraryChapter chapter-id="电磁学/04-电流场" />
